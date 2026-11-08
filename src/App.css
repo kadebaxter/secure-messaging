@@ -1,0 +1,15 @@
+.app { max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+header h1 { font-size: 1.4rem; margin: 0 0 12px; }
+nav { display: flex; gap: 16px; }
+nav a { color: var(--muted); text-decoration: none; padding-bottom: 10px; border-bottom: 2px solid transparent; }
+nav a.active { color: var(--fg); border-color: var(--accent); }
+form { display: flex; flex-direction: column; gap: 8px; }
+h2 { margin: 0 0 8px; font-size: 1.15rem; }
+label { font-weight: 600; margin-top: 8px; }
+textarea, input { width: 100%; font: inherit; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: inherit; }
+textarea { resize: vertical; }
+.mono { font-family: ui-monospace, monospace; font-size: 0.85rem; word-break: break-all; }
+button { align-self: flex-start; font: inherit; padding: 8px 16px; border: none; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: default; }
+.error { color: var(--error); margin: 4px 0; }
