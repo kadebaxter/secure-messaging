@@ -12,11 +12,13 @@ The passphrase and plaintext are never sent to a server.
 
 ## Running the project
 
-Requires [Node.js](https://nodejs.org/) 20.19+ or 22.12+.
+Requires [Node.js](https://nodejs.org/) 22.13+ (the server uses the built-in
+`node:sqlite` module).
 
 ```bash
 npm install
-npm run dev
+npm run server   # terminal 1: API + database on port 3001
+npm run dev      # terminal 2: the web app
 ```
 
 Then open the URL Vite prints (usually http://localhost:5173).
@@ -25,6 +27,10 @@ Then open the URL Vite prints (usually http://localhost:5173).
   **Encrypt**, and copy the encrypted message.
 - **Decrypt** page (`#/decrypt`): paste an encrypted message, enter the
   passphrase, and click **Decrypt** to get the plaintext back.
+- **Save**: after encrypting, optionally type an index and click **Save to
+  server**. Leave the index blank to get a random one.
+- **Look up** page (`#/lookup`): enter an index to fetch the stored encrypted
+  message, then enter the passphrase to decrypt it in the browser.
 
 Other scripts: `npm run build` (production build to `dist/`), `npm run preview`
 (serve the build), `npm run lint`.
@@ -39,7 +45,10 @@ or over HTTPS.
 | `src/crypto.js` | All encryption, decryption and message encoding |
 | `src/pages/EncryptPage.jsx` | Encrypt page |
 | `src/pages/DecryptPage.jsx` | Decrypt page |
-| `src/App.jsx` | Navigation between the two pages (hash routing) |
+| `src/pages/LookupPage.jsx` | Look up a stored message by index and decrypt it |
+| `src/api.js` | Browser calls to the server |
+| `server.js` | API server and SQLite database (`messages.db`) |
+| `src/App.jsx` | Navigation between the pages (hash routing) |
 
 ## Crypto choices
 
@@ -89,3 +98,26 @@ string:
 - JavaScript strings are immutable and cannot be wiped, so the UI **clears the
   passphrase field** after every encrypt or decrypt. Nothing is written to
   `localStorage`, cookies or the network.
+
+## Message storage choices
+
+Encryption and decryption stay in the browser. The only thing sent to the
+server is the Base64 encrypted message (which already contains the version,
+salt and IV) plus an optional index. The passphrase never leaves the browser,
+and the server never decrypts anything.
+
+| Decision | Choice | Why |
+|---|---|---|
+| Server stack | Node.js, built-in `node:http` | Same language as the front end, and no extra packages to install |
+| Database | SQLite via built-in `node:sqlite` | A single file (`messages.db`), no database server to set up |
+| Database access | Parameterized queries (prepared statements) | User input is never put into SQL text, which prevents SQL injection |
+| Message index | User provided, or a random ID if left blank | Random IDs are 12 random bytes (96 bits) as 16 URL-safe characters, so they can't be guessed. Sequential numbers would let anyone walk through every message. A user-chosen index is only as hard to guess as the user makes it |
+| How the cipher text is stored | One text column holding the whole Base64 block | The block already contains version, salt, IV and ciphertext in a fixed layout, so splitting it adds nothing |
+| What the server accepts | Index: 1-64 characters of `A-Z a-z 0-9 - _`. Cipher text: valid standard Base64, 60 to 70,000 characters. Request body: at most 100 KB | Rejects oversized or malformed input before it reaches the database. A duplicate index is rejected (409) rather than overwriting an existing message |
+
+### API
+
+| Request | Body | Response |
+|---|---|---|
+| `POST /api/messages` | `{ "ciphertext": "...", "index": "optional" }` | `201 { "index": "..." }`, `400` invalid input, `409` index taken |
+| `GET /api/messages/:index` | | `200 { "index": "...", "ciphertext": "..." }`, `404` not found |

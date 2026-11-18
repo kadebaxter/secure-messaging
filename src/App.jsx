@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import EncryptPage from './pages/EncryptPage.jsx'
 import DecryptPage from './pages/DecryptPage.jsx'
+import LookupPage from './pages/LookupPage.jsx'
 import ErrorBoundary from './ErrorBoundary.jsx'
 import './App.css'
 
 const PAGES = {
   '#/encrypt': { label: 'Encrypt', Component: EncryptPage },
   '#/decrypt': { label: 'Decrypt', Component: DecryptPage },
+  '#/lookup': { label: 'Look up', Component: LookupPage },
 }
 const DEFAULT_ROUTE = '#/encrypt'
 

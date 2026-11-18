@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { saveMessage } from '../api.js'
 import { encryptMessage } from '../crypto.js'
 import { useCryptoAction } from '../useCryptoAction.js'
 
@@ -6,10 +7,21 @@ export default function EncryptPage() {
   const [plaintext, setPlaintext] = useState('')
   const [passphrase, setPassphrase] = useState('')
   const [copied, setCopied] = useState(false)
+  const [index, setIndex] = useState('')
+  const [saved, setSaved] = useState({})
+
+  async function handleSave() {
+    try {
+      setSaved({ index: (await saveMessage(state.output, index.trim())).index })
+    } catch (err) {
+      setSaved({ error: err.message })
+    }
+  }
 
   const [state, formAction, pending] = useCryptoAction((formData) => {
     setPassphrase('') // don't keep the passphrase in component state after use
     setCopied(false)
+    setSaved({})
     return encryptMessage(formData.get('plaintext'), formData.get('passphrase'))
   })
 
@@ -53,6 +65,14 @@ export default function EncryptPage() {
           >
             {copied ? 'Copied' : 'Copy'}
           </button>
+
+          <label htmlFor="enc-index">Index (optional; leave blank for a random one)</label>
+          <input id="enc-index" value={index} onChange={(e) => setIndex(e.target.value)} />
+          <button type="button" onClick={handleSave} disabled={!!saved.index}>
+            {saved.index ? 'Saved' : 'Save to server'}
+          </button>
+          {saved.index && <p>Saved with index <code>{saved.index}</code></p>}
+          {saved.error && <p className="error" role="alert">{saved.error}</p>}
         </>
       )}
     </form>
